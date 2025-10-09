@@ -1,0 +1,130 @@
+#include <Arduino.h>
+#include <assert.h>
+#include <stdio.h>
+#include <ArduinoHttpClient.h>
+#include <WiFi.h>
+
+
+enum State {
+  STATE1 = 1, 
+  STATE2 = 2, 
+  STATE3 = 3, 
+  STATE4 = 4, 
+  STATE5 = 5,
+  STATE6 = 6,
+  STATE7 = 7
+};
+
+volatile State currentState = STATE1;
+int lastPress = 0;
+int debounceThreshold = 1000;
+volatile bool stateChanged = false;
+volatile int newState = 1;
+
+/////// you can enter your sensitive data in the Secret tab/arduino_secrets.h
+/////// WiFi Settings ///////
+char ssid[] = "tufts_eecs";
+char pass[] = "foundedin1883";
+
+char serverAddress[] = "34.28.153.91";  // server address
+int port = 80;
+
+WiFiClient wifi;
+WebSocketClient client = WebSocketClient(wifi, serverAddress, port);
+String clientID = "DCF2BCAB6F0B"; //Insert your Client ID Here!
+String messageFilter = "WebClient_DCF2BCAB6F0B.";
+int status = WL_IDLE_STATUS;
+int count = 0;
+volatile int requestedState = 0;
+
+
+void ISR_button_pressed() {
+  unsigned long currentTime = millis();
+  if (currentTime - lastPress >= debounceThreshold) {
+    lastPress = currentTime;
+    
+    newState = (State)(((int)currentState % 7) + 1);
+    stateChanged = true;
+  }
+}
+
+
+void setup() {
+  Serial.begin(9600);
+  while ( status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to Network named: ");
+    Serial.println(ssid);  // print the network name (SSID);
+
+    // Connect to WPA/WPA2 network:
+    status = WiFi.begin(ssid, pass);
+  }
+
+  // print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // print your WiFi shield's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  pinMode(12, INPUT_PULLUP);
+  pinMode(13, OUTPUT);
+
+  attachInterrupt(digitalPinToInterrupt(12), ISR_button_pressed, FALLING);
+}
+
+void loop() {
+
+  // start Websocket Client
+  Serial.println("starting WebSocket client");
+  client.begin();
+  Serial.println("WebSocket client started");
+  client.beginMessage(TYPE_TEXT);
+  Serial.print("Sending Client ID: ");
+  client.print(clientID);
+  client.endMessage();
+  Serial.println("sent");
+
+  while (client.connected()) {
+    int messageSize = client.parseMessage();
+    if (messageSize > 0) {
+      String receivedMessage = client.readString();
+
+      if (receivedMessage.startsWith(messageFilter)) {
+        requestedState = receivedMessage[23] - '0';
+        if (requestedState < 1 || requestedState > 7) {
+          Serial.println("Undefined state requested: ");
+          Serial.println(requestedState);
+          continue;
+        }
+        newState = (State)requestedState;
+        stateChanged = true;
+
+      } else {
+        Serial.print("Message ignored");
+      }
+    }
+
+
+    if (stateChanged) {
+      int next = newState;
+      stateChanged = false;
+
+      currentState = newState;
+      Serial.print("current state: ");
+      Serial.println((int)currentState);
+
+      int blinks = (int)currentState;
+      for (int i = 0; i < blinks; ++i) {
+        digitalWrite(13, HIGH);
+        delay(200);
+        digitalWrite(13, LOW);
+        delay(200);
+      }
+    }
+  }
+
+  Serial.println("disconnected");
+ 
+}
