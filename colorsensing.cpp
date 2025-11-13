@@ -87,18 +87,18 @@ char currentColor() {
 
 
 
-  if (sum < 5) {
-    Serial.println("Black Color Detected");
-    //return 'N';
-  } else if(blueValue > 30 && greenValue != 0){
+  if(greenValue > 6){
     Serial.println("Yellow Color Detected");
     //return 'Y';
-  } else if(blueValue > redValue && blueValue > greenValue) {
-    Serial.println("Blue Color Detected");
-    //return 'B';
-  } else if(redValue > greenValue && redValue > blueValue) {
+  } else if(redValue > 20) {
     Serial.println("Red Color Detected");
     //return 'R';
+  } else if(blueValue > 50) {
+    Serial.println("Blue Color Detected");
+    //return 'B';
+  } else {
+    Serial.println("Black Color Detected");
+    //return 'N';
   }
 
   
@@ -141,3 +141,4 @@ void setSpeed(int motor1, int motor2) {
     analogWrite(pin2, 0);
   }
 }
+
