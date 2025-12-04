@@ -27,15 +27,18 @@ int messageLength = 0;
 
 char currentColorChar = '\0';
 
-char followColorChar = 'B';
+char followColorChar = 'N';
 
-int motor1Speed = 60;
-int motor2Speed = 60;
-
-int tuning_constant = 25;
 
 // Minimal ISR stub for button interrupt
 void ISR_button_pressed() {}
+
+void followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense);
+void followLine_R(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense);
+void turnRight(MotorControl motors, int degree);
+void turnLeft(MotorControl motors, int degree);
+void driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char colorChar);
+void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense);
 
 void setup() {
     Serial.begin(9600);
@@ -43,8 +46,9 @@ void setup() {
     colorSensing.initializeColorSensing(LED_R, LED_G, LED_B, LED_IR, 
                                     PHOTOTRANSISTOR_Visible, PHOTOTRANSISTOR_IR);
     distanceSensing.initializeDistanceSensing();
-    pinMode(12, INPUT_PULLUP); //for button
+    pinMode(BUTTON_PIN, INPUT_PULLUP); //for button
     pinMode(13, OUTPUT); //for attached LED
+    pinMode(VBAT_PIN, INPUT); //for battery voltage reading
 
     while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to Network named: ");
@@ -62,41 +66,48 @@ void setup() {
     
 }
 
+
+
 void loop() {
-    while (true)
-    {   
-        
-        delay(25);
-        currentColorChar = colorSensing.currentColor();
-        //Serial.println("Current Color Detected: ");
-        //Serial.println(currentColorChar);
-        //Serial.println("----------------------");
     
-        if (currentColorChar == followColorChar) {
-            //Serial.println("Following Color Detected");
-            motor1Speed = motor1Speed - tuning_constant;
-            motor2Speed= motor2Speed + tuning_constant;
-        } else {
-            motor1Speed = motor1Speed + tuning_constant;
-            motor2Speed = motor2Speed - tuning_constant;
-        }
-
-        if(motor1Speed <  55) motor1Speed = 55;
-        if(motor2Speed < 55) motor2Speed = 55;
-        if(motor1Speed > 100) motor1Speed = 100;
-        if(motor2Speed > 100) motor2Speed = 100;
-
-        
-
-        if(distanceSensing.readIRValue() < -25) {
-            Serial.println("Motors Stopped");
-            motor1Speed = 0;
-            motor2Speed = 0;
-        }
-
-        motorControl.setSpeed(motor1Speed, motor2Speed);
+    /*
+    while(true) {
+        Serial.println("VBAT: " + String((float(analogRead(VBAT_PIN)) * VBAT_SCALE) * (5.0 / 1023.0)) + " V");
+        delay(500);
     }
-    
+        */
+    while(true) {
+        
+        while(digitalRead(BUTTON_PIN) != LOW) {}
+        //Bot1
+        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+        turnRight(motorControl, 180); //180 deg right turn  
+        driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
+        turnLeft(motorControl, 90); //90 deg left turn
+        followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
+        turnLeft(motorControl, 90); //90 deg left turn
+        driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+        turnLeft(motorControl, 90); //90 deg left turn
+        followLine_L('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+        turnLeft(motorControl, 90); //90    deg left turn
+        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+        
+        while(digitalRead(BUTTON_PIN) != LOW) {}
+        //Bot2
+        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+        turnLeft(motorControl, 180); //180 deg left turn  
+        driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+        turnRight(motorControl, 90); //90 deg right turn
+        driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+        followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
+        turnRight(motorControl, 90); //90 deg right turn
+        driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+        turnRight(motorControl, 90); //90 deg right turn
+        followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+        turnRight(motorControl, 90); //90    deg left turn
+        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    }
+
     ws::init(client, CLIENTID);
     while (client.connected()) {
         
@@ -121,3 +132,107 @@ void loop() {
         }
     }
 }
+
+void followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense) {
+    int motor1Speed = baseSpeed;
+    int motor2Speed = baseSpeed;
+
+    while (true) {   
+        delay(25);
+        char currentColor = colorsense.currentColor();
+        if (currentColor == colorChar) {
+            motor1Speed = motor1Speed - tuningConst;
+            motor2Speed= motor2Speed + tuningConst;
+        } else {
+            motor1Speed = motor1Speed + tuningConst;
+            motor2Speed = motor2Speed - tuningConst;
+        }
+
+        if(motor1Speed <  55) motor1Speed = 55;
+        if(motor2Speed < 55) motor2Speed = 55;
+        if(motor1Speed > 100) motor1Speed = 100;
+        if(motor2Speed > 100) motor2Speed = 100;
+
+        motors.setSpeed(motor1Speed, motor2Speed);
+
+        if(distancesense.readIRValue() < -25) {
+            motors.setSpeed(0, 0);
+            return;
+        }
+        
+    }
+    
+
+}
+
+void followLine_R(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense) {
+    int motor1Speed = baseSpeed;
+    int motor2Speed = baseSpeed;
+
+    while (true) {   
+        delay(25);
+        char currentColor = colorsense.currentColor();
+        if (currentColor != colorChar) {
+            motor1Speed = motor1Speed - tuningConst;
+            motor2Speed= motor2Speed + tuningConst;
+        } else {
+            motor1Speed = motor1Speed + tuningConst;
+            motor2Speed = motor2Speed - tuningConst;
+        }
+
+        if(motor1Speed <  55) motor1Speed = 55;
+        if(motor2Speed < 55) motor2Speed = 55;
+        if(motor1Speed > 100) motor1Speed = 100;
+        if(motor2Speed > 100) motor2Speed = 100;
+
+        motors.setSpeed(motor1Speed, motor2Speed);
+
+        if(distancesense.readIRValue() < -25) {
+            motors.setSpeed(0, 0);
+            return;
+        }
+        
+    }
+    
+
+}
+
+void turnRight(MotorControl motors, int degree) {
+    motors.setSpeed(60, -60);
+    delay(degree * 9); //adjust delay for turn
+    motors.setSpeed(0, 0);
+}
+void turnLeft(MotorControl motors, int degree) {
+    motors.setSpeed(-60, 60);
+    delay(degree * 9); //adjust delay for turn
+    motors.setSpeed(0, 0);
+}
+void driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char colorChar) {
+    motors.setSpeed(80, 80);
+    int targetCounter = 0;
+    while(true) {
+        delay(25);
+        char currentColor = colorsense.currentColor();
+        if(currentColor == colorChar) {
+            targetCounter++;
+        } else if (currentColor != colorChar && targetCounter > 0) {
+            targetCounter = 0;
+        }
+        if(targetCounter >= 3) {
+            motors.setSpeed(0, 0);
+            return;
+        }
+    }
+}
+void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense) {
+    motors.setSpeed(80, 80);
+    while(true) {
+        delay(25);
+        if(distancesense.readIRValue() < -25) {
+            motors.setSpeed(0, 0);
+            return;
+        }
+    }
+}
+
+//15 deg per 150ms at 60 speed

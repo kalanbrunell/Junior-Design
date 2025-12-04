@@ -3,15 +3,20 @@
 
 #include <Arduino.h> 
 
+const int BUTTON_PIN = 8;
+const int VBAT_PIN = A0;
+const float VBAT_SCALE = 2; 
+
+
 const int LED_R = 2;
 const int LED_B = 3;
 const int LED_G = 4;
 
-const int pin0 = 5;
-const int pin1 = 6;
+const int pin0 = 6;
+const int pin1 = 5;
 const int pin2 = 10;
 const int pin3 = 9;
-const float TRIM1 = 0.935f;
+const float TRIM1 = 0.97f;
 const float TRIM2 = 1.0f;
 
 const int PHOTOTRANSISTOR_Visible = A5;

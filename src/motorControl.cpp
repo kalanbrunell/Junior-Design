@@ -14,6 +14,11 @@ void MotorControl::initializeMotion(int pin0, int pin1, int pin2, int pin3, floa
     pinMode(_pin1, OUTPUT);
     pinMode(_pin2, OUTPUT);
     pinMode(_pin3, OUTPUT);
+
+    digitalWrite(_pin0, HIGH);
+    digitalWrite(_pin1, HIGH);
+    digitalWrite(_pin2, HIGH);
+    digitalWrite(_pin3, HIGH);
 }
 
 void MotorControl::setSpeed(int motor1, int motor2) {

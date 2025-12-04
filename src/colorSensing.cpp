@@ -39,13 +39,13 @@ char ColorSensing::currentColor() {
 //blue > 35 -> blue
 //red > 16 -> red
 
-  if(redValue > 30 && greenValue > 3) {
+  if(redValue > 250) {
     //Serial.println("Yellow Color Detected");
     return 'Y';
-  } else if(blueValue > 35) {
+  } else if(blueValue > 300) {
     //Serial.println("Blue Color Detected");
     return 'B';
-  }else if(redValue >= 16) {
+  }else if(redValue >= 100 && blueValue > 40) {
     //Serial.println("Red Color Detected");
     return 'R';
   } else {
