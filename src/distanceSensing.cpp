@@ -14,5 +14,5 @@ int DistanceSensing::readIRValue(){
     delay(10);
     int value = analogRead(PHOTOTRANSISTOR_IR);
 
-    return value - ambient;
+    return (value - ambient) * max(1.0, ambient) * 0.01;
 }

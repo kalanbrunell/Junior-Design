@@ -10,6 +10,7 @@ void ws::init(WebSocketClient &client, const char* clientID, const char* path) {
     Serial.println("WebSocket client started");
     client.beginMessage(TYPE_TEXT);
     Serial.print("Sending Client ID: ");
+    Serial.println(clientID);
     client.print(clientID);
     client.endMessage();
 }
@@ -27,14 +28,20 @@ void ws::printWifiDiagnostics() {
 String ws::poll(WebSocketClient &client) {
     int messageSize = client.parseMessage();
     if (messageSize > 0) {
-      String receivedMessage = client.readString();
+        String receivedMessage = client.readString();
         if (receivedMessage.startsWith(String(MACCHEESEFILTER))) {
-            String parsedMessage = '0' + receivedMessage.substring(strlen(MACCHEESEFILTER));
-            return parsedMessage;
-        } else if(receivedMessage.startsWith(String(EXTERNALFILTER))) {
-            String parsedMessage = '1' + receivedMessage.substring(strlen(EXTERNALFILTER));
-            return parsedMessage;
+            int dotIndex = receivedMessage.indexOf('.');
+            Serial.println(dotIndex);
+            if (dotIndex != -1) {
+                return "0" + receivedMessage.substring(dotIndex + 1);
+            }
+        } else if (receivedMessage.startsWith(String(EXTERNALFILTER))) {
+            int dotIndex = receivedMessage.indexOf('.');
+            if (dotIndex != -1) {
+                return "1" + receivedMessage.substring(dotIndex + 1);
+            }
         }
+        else return ("UNFILTERED: " + receivedMessage);
     }
     return "";
 }

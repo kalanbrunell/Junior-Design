@@ -51,11 +51,11 @@ void setup() {
     pinMode(VBAT_PIN, INPUT); //for battery voltage reading
 
     while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to Network named: ");
-    Serial.println(SSID);  // print the network name (SSID);
+        Serial.print("Attempting to connect to Network named: ");
+        Serial.println(SSID);  // print the network name (SSID);
 
-    // Connect to WPA/WPA2 network:
-    status = WiFi.begin(SSID, PASS);
+        // Connect to WPA/WPA2 network:
+        status = WiFi.begin(SSID, PASS);
     }
 
     ws::printWifiDiagnostics();
@@ -76,50 +76,52 @@ void loop() {
         delay(500);
     }
         */
-    while(true) {
+    // while(true) {
         
-        while(digitalRead(BUTTON_PIN) != LOW) {}
-        //Bot1
-        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-        turnRight(motorControl, 180); //180 deg right turn  
-        driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
-        turnLeft(motorControl, 90); //90 deg left turn
-        followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
-        turnLeft(motorControl, 90); //90 deg left turn
-        driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
-        turnLeft(motorControl, 90); //90 deg left turn
-        followLine_L('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
-        turnLeft(motorControl, 90); //90    deg left turn
-        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    //     while(digitalRead(BUTTON_PIN) != LOW) {}
+    //     //Bot1
+    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    //     turnRight(motorControl, 180); //180 deg right turn  
+    //     driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
+    //     turnLeft(motorControl, 90); //90 deg left turn
+    //     followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
+    //     turnLeft(motorControl, 90); //90 deg left turn
+    //     driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+    //     turnLeft(motorControl, 90); //90 deg left turn
+    //     followLine_L('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+    //     turnLeft(motorControl, 90); //90    deg left turn
+    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
         
-        while(digitalRead(BUTTON_PIN) != LOW) {}
-        //Bot2
-        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-        turnLeft(motorControl, 180); //180 deg left turn  
-        driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
-        turnRight(motorControl, 90); //90 deg right turn
-        driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
-        followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
-        turnRight(motorControl, 90); //90 deg right turn
-        driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
-        turnRight(motorControl, 90); //90 deg right turn
-        followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
-        turnRight(motorControl, 90); //90    deg left turn
-        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-    }
+    //     while(digitalRead(BUTTON_PIN) != LOW) {}
+    //     //Bot2
+    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    //     turnLeft(motorControl, 180); //180 deg left turn  
+    //     driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+    //     turnRight(motorControl, 90); //90 deg right turn
+    //     driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+    //     followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
+    //     turnRight(motorControl, 90); //90 deg right turn
+    //     driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+    //     turnRight(motorControl, 90); //90 deg right turn
+    //     followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+    //     turnRight(motorControl, 90); //90    deg left turn
+    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    // }
 
+    // Serial.println("loop start");
     ws::init(client, CLIENTID);
     while (client.connected()) {
-        
         //Poll first to find a message from Mac and Cheese team
         receivedMessage = ws::poll(client);
         messageLength = receivedMessage.length();
         if (messageLength > 0) { 
-            Serial.println("Message Received: " + receivedMessage); //Mac and Cheese Team Command Received
+            Serial.print("Message Received: " + receivedMessage); //Mac and Cheese Team Command Received
             if(receivedMessage.charAt(0) == '0') {
-                Serial.println("Internal Control Mode");
+                Serial.println(" -- Internal Control Mode");
             } else if(receivedMessage.charAt(0) == '1') {
-                Serial.println("External Control Mode: Commencing");
+                Serial.println(" -- External Control Mode: Commencing");
+            } else {
+                Serial.println("");
             }
             // do something with this message... WIP
         }
@@ -228,7 +230,11 @@ void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense) {
     motors.setSpeed(80, 80);
     while(true) {
         delay(25);
-        if(distancesense.readIRValue() < -25) {
+        int dist = distancesense.readIRValue();
+        int value = (dist < -500) ? value + 1 : 0;
+        // Serial.println(dist);
+        if(value > 3) {
+            value = 0;
             motors.setSpeed(0, 0);
             return;
         }
