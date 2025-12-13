@@ -1,0 +1,197 @@
+#include <Arduino.h>
+#include <assert.h>
+#include <stdio.h>
+#include <ArduinoHttpClient.h>
+#include <WiFi.h>
+
+
+enum State {
+  STATE0 = 0,
+  STATE1 = 1,
+  STATE2 = 2,
+  STATE3 = 3,
+  STATE4 = 4,
+  STATE5 = 5,
+  STATE6 = 6
+};
+
+volatile State currentState = STATE0;
+int lastPress = 0;
+int debounceThreshold = 1000;
+volatile bool stateChanged = false;
+volatile int newState = 0;
+
+/////// you can enter your sensitive data in the Secret tab/arduino_secrets.h
+/////// WiFi Settings ///////
+char ssid[] = "tufts_eecs";
+char pass[] = "foundedin1883";
+
+char serverAddress[] = "34.28.153.91";  // server address
+int port = 80;
+
+WiFiClient wifi;
+WebSocketClient client = WebSocketClient(wifi, serverAddress, port);
+String clientID = "DCF2BCAB6F0B"; //Insert your Client ID Here!
+String messageFilter = "WebClient_DCF2BCAB6F0B.";
+int status = WL_IDLE_STATUS;
+int count = 0;
+volatile int requestedState = 0;
+
+// put function declarations here:
+void setSpeed(int motor1, int motor2);
+
+void ISR_button_pressed() {
+  unsigned long currentTime = millis();
+  if (currentTime - lastPress >= debounceThreshold) {
+    lastPress = currentTime;
+    
+    // increment state and wrap around 0..6
+    newState = (State)(((int)currentState + 1) % 7);
+    stateChanged = true;
+  }
+}
+
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(pin0, OUTPUT);
+  pinMode(pin1, OUTPUT);
+  pinMode(pin2, OUTPUT);
+  pinMode(pin3, OUTPUT);
+  Serial.begin(9600);
+  while ( status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to Network named: ");
+    Serial.println(ssid);  // print the network name (SSID);
+
+    // Connect to WPA/WPA2 network:
+    status = WiFi.begin(ssid, pass);
+  }
+
+  // print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // print your WiFi shield's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  pinMode(12, INPUT_PULLUP);
+  pinMode(13, OUTPUT);
+
+  attachInterrupt(digitalPinToInterrupt(12), ISR_button_pressed, FALLING);
+}
+
+void loop() {
+
+  // start Websocket Client
+  Serial.println("starting WebSocket client");
+  client.begin();
+  Serial.println("WebSocket client started");
+  client.beginMessage(TYPE_TEXT);
+  Serial.print("Sending Client ID: ");
+  client.print(clientID);
+  client.endMessage();
+  Serial.println("sent");
+
+  while (client.connected()) {
+    int messageSize = client.parseMessage();
+    if (messageSize > 0) {
+      String receivedMessage = client.readString();
+
+      if (receivedMessage.startsWith(messageFilter)) {
+        requestedState = receivedMessage[23] - '0';
+        if (requestedState < 0 || requestedState > 6) {
+          Serial.println("Undefined state requested: ");
+          Serial.println(requestedState);
+          continue;
+        }
+        newState = (State)requestedState;
+        stateChanged = true;
+
+      } else {
+        Serial.print("Message ignored");
+      }
+    }
+
+
+    if (stateChanged) {
+      int next = newState;
+      stateChanged = false;
+
+  currentState = (State)newState;
+      Serial.print("current state: ");
+      Serial.println((int)currentState);
+
+      int blinks = (int)currentState;
+      for (int i = 0; i < blinks; ++i) {
+        digitalWrite(13, HIGH);
+        delay(200);
+        digitalWrite(13, LOW);
+        delay(200);
+      }
+    }
+
+    // Execute motion for currentState (states 0..6 as described in the project)
+    switch ((int)currentState) {
+      case 0: // State 0: Stop
+        setSpeed(0, 0);
+        break;
+      case 1: // State 1: Go forward at a desired speed
+        setSpeed(200, 200); // adjust values as needed
+        break;
+      case 2: // State 2: Go backward at a desired speed
+        setSpeed(-200, -200);
+        break;
+      case 3: // State 3: Pivot in place clockwise
+        setSpeed(200, -200);
+        break;
+      case 4: // State 4: Pivot in place counterclockwise
+        setSpeed(-200, 200);
+        break;
+      case 5: // State 5: Right turn with a desired turn radius (approx.)
+        setSpeed(200, 50);
+        break;
+      case 6: // State 6: Left turn with a desired turn radius (approx.)
+        setSpeed(100, 50);
+        break;
+      default:
+        // Unknown state: stop for safety
+        setSpeed(0, 0);
+        break;
+    }
+  }
+
+  Serial.println("disconnected");
+ 
+}
+
+
+void setSpeed(int motor1, int motor2) {
+  motor1 *= TRIM1;
+  motor2 *= TRIM2;
+  if (abs(motor1) > 255 || abs(motor2) > 255) {
+    Serial.println("ERROR: Max absolute speed value is 255");
+    assert(false);
+  }
+  Serial.print(motor1);
+  Serial.print(motor2);
+  if (motor1 > 0) {
+    Serial.println("m1positive");
+    analogWrite(pin0, motor1);
+    analogWrite(pin1, 0);
+  } else {
+    Serial.println("m1negative");
+    analogWrite(pin1, -motor1);
+    analogWrite(pin0, 0);
+  }
+  if (motor2 < 0) {
+    Serial.println("positive");
+    analogWrite(pin2, -motor2);
+    analogWrite(pin3, 0);
+  } else {
+    Serial.println("negative");
+    analogWrite(pin3, motor2);
+    analogWrite(pin2, 0);
+  }
+}
