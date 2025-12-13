@@ -32,7 +32,8 @@ char followColorChar = 'N';
 
 // Minimal ISR stub for button interrupt
 void ISR_button_pressed() {}
-
+void indicateSolid(char colorChar);
+void indicateFlash(char colorChar);
 void followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense);
 void followLine_R(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense);
 void turnRight(MotorControl motors, int degree);
@@ -41,6 +42,11 @@ void driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char 
 void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense);
 
 void setup() {
+    pinMode(INDC_B_PIN, OUTPUT);
+    pinMode(INDC_G_PIN, OUTPUT);
+    pinMode(INDC_R_PIN, OUTPUT);
+    indicateFlash('B');
+    indicateSolid('R');
     Serial.begin(9600);
     motorControl.initializeMotion(pin0, pin1, pin2, pin3, TRIM1, TRIM2);
     colorSensing.initializeColorSensing(LED_R, LED_G, LED_B, LED_IR, 
@@ -49,7 +55,7 @@ void setup() {
     pinMode(BUTTON_PIN, INPUT_PULLUP); //for button
     pinMode(13, OUTPUT); //for attached LED
     pinMode(VBAT_PIN, INPUT); //for battery voltage reading
-
+    
     while (status != WL_CONNECTED) {
         Serial.print("Attempting to connect to Network named: ");
         Serial.println(SSID);  // print the network name (SSID);
@@ -69,7 +75,7 @@ void setup() {
 
 
 void loop() {
-    
+    indicateSolid('B');
     /*
     while(true) {
         Serial.println("VBAT: " + String((float(analogRead(VBAT_PIN)) * VBAT_SCALE) * (5.0 / 1023.0)) + " V");
@@ -111,6 +117,7 @@ void loop() {
     // Serial.println("loop start");
     ws::init(client, CLIENTID);
     while (client.connected()) {
+        indicateSolid('G');
         //Poll first to find a message from Mac and Cheese team
         receivedMessage = ws::poll(client);
         messageLength = receivedMessage.length();
@@ -241,4 +248,34 @@ void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense) {
     }
 }
 
-//15 deg per 150ms at 60 speed
+void indicateSolid(char colorChar) {
+    if(colorChar == 'R') {
+        digitalWrite(INDC_R_PIN, HIGH);
+        digitalWrite(INDC_G_PIN, LOW);
+        digitalWrite(INDC_B_PIN, LOW);
+    } else if(colorChar == 'G') {
+        digitalWrite(INDC_R_PIN, LOW);
+        digitalWrite(INDC_G_PIN, HIGH);
+        digitalWrite(INDC_B_PIN, LOW);
+    } else if(colorChar == 'B') {
+        digitalWrite(INDC_R_PIN, LOW);
+        digitalWrite(INDC_G_PIN, LOW);
+        digitalWrite(INDC_B_PIN, HIGH);
+    } else if(colorChar == 'Y') {
+        digitalWrite(INDC_R_PIN, HIGH);
+        digitalWrite(INDC_G_PIN, HIGH);
+        digitalWrite(INDC_B_PIN, LOW);
+    } else {
+        digitalWrite(INDC_R_PIN, LOW);
+        digitalWrite(INDC_G_PIN, LOW);
+        digitalWrite(INDC_B_PIN, LOW);
+    }
+}
+void indicateFlash(char colorChar){
+    for(int i = 0; i < 2; i++) {
+        indicateSolid(colorChar);
+        delay(250);
+        indicateSolid('N');
+        delay(250);
+    }
+}

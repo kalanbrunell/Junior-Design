@@ -7,6 +7,9 @@ const int BUTTON_PIN = 8;
 const int VBAT_PIN = A0;
 const float VBAT_SCALE = 2; 
 
+const int INDC_R_PIN = 13;
+const int INDC_G_PIN = 12;
+const int INDC_B_PIN = 11;
 
 const int LED_R = 2;
 const int LED_B = 3;
