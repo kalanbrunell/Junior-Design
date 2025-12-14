@@ -29,14 +29,15 @@ String ws::poll(WebSocketClient &client) {
     int messageSize = client.parseMessage();
     if (messageSize > 0) {
         String receivedMessage = client.readString();
+        Serial.println("Raw Message Received: " + receivedMessage);
         if (receivedMessage.startsWith(String(MACCHEESEFILTER))) {
-            int dotIndex = receivedMessage.indexOf('.');
+            int dotIndex = receivedMessage.indexOf(',');
             Serial.println(dotIndex);
             if (dotIndex != -1) {
                 return "0" + receivedMessage.substring(dotIndex + 1);
             }
         } else if (receivedMessage.startsWith(String(EXTERNALFILTER))) {
-            int dotIndex = receivedMessage.indexOf('.');
+            int dotIndex = receivedMessage.indexOf(',');
             if (dotIndex != -1) {
                 return "1" + receivedMessage.substring(dotIndex + 1);
             }
@@ -44,4 +45,10 @@ String ws::poll(WebSocketClient &client) {
         else return ("UNFILTERED: " + receivedMessage);
     }
     return "";
+}
+
+void ws::sendMessage(WebSocketClient &client, const String &message) {
+    client.beginMessage(TYPE_TEXT);
+    client.print(message);
+    client.endMessage();
 }

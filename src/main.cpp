@@ -11,6 +11,7 @@
 #include <WiFi.h>
 
 
+
 WiFiClient wifi;
 WebSocketClient client = WebSocketClient(wifi, SERVERADDRESS, PORT);
 
@@ -28,6 +29,8 @@ int messageLength = 0;
 char currentColorChar = '\0';
 
 char followColorChar = 'N';
+
+int BOTID = 1; //Set Bot ID here
 
 
 // Minimal ISR stub for button interrupt
@@ -82,6 +85,9 @@ void loop() {
         delay(500);
     }
         */
+
+    // SOLO DEMO CODE---------------------------------------------------------
+
     // while(true) {
         
     //     while(digitalRead(BUTTON_PIN) != LOW) {}
@@ -114,9 +120,14 @@ void loop() {
     //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
     // }
 
+    //----------------------------------------------------------------------------
+
+    //PARTNER DEMO CODE---------------------------------------------------------
+
     // Serial.println("loop start");
     ws::init(client, CLIENTID);
     while (client.connected()) {
+        String EXT = "1";
         indicateSolid('G');
         //Poll first to find a message from Mac and Cheese team
         receivedMessage = ws::poll(client);
@@ -133,12 +144,133 @@ void loop() {
             // do something with this message... WIP
         }
         //other team wants state 7
-        currentColorChar = colorSensing.currentColor();
+        /*currentColorChar = colorSensing.currentColor();
         if (currentColorChar == followColorChar) {
             motorControl.setSpeed(100, 75);
         } else {
             motorControl.setSpeed(75, 100);
+        }*/
+
+        
+        //BOT1
+        if (BOTID == 1) {
+            ws::sendMessage(client, String("B1:START"));
+            driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+            turnRight(motorControl, 180); //180 deg right turn  
+            driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
+            turnLeft(motorControl, 90); //90 deg left turn
+            ws::sendMessage(client, String("B1:AT_RED")); //Other bot should start 
+            indicateFlash('B');
+            followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
+            turnLeft(motorControl, 90); //90 deg left turn
+            driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+            turnLeft(motorControl, 90); //90 deg left turn
+            //Wait for signal from other bot to proceed
+            //poll until message received
+            while(true) {
+                receivedMessage = ws::poll(client);
+                //messageLength = receivedMessage.length();
+                if (receivedMessage == EXT + "B2:AT_BLUE") {
+                    indicateFlash('G');
+                    Serial.println("Received AT_BLUE from other bot, proceeding along yellow");
+                    ws::sendMessage(client, String("B1:ACK_AT_BLUE"));
+                    break;
+                }
+            }
+            followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+            turnRight(motorControl, 90); //90    deg left turn
+            driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+            indicateFlash('G');
+            ws::sendMessage(client, String("B1:HOME"));
+            while(true) {
+                receivedMessage = ws::poll(client);
+                //messageLength = receivedMessage.length();
+                if (receivedMessage == EXT + "B2:HOME") {
+                    indicateFlash('G');
+                    Serial.println("Received AT_BLUE from other bot, proceeding along yellow");
+                    ws::sendMessage(client, String("B1:ACK_HOME"));
+                    break;
+                }
+            }
+        } else {
+            //BOT2
+            //Wait for signal from other bot to start
+            while(true) {
+                receivedMessage = ws::poll(client);
+                if (receivedMessage == EXT + "B1:AT_RED") {
+                    indicateFlash('G');
+                    Serial.println("Received AT_RED from other bot, commencing");
+                    ws::sendMessage(client, String("B2:START"));
+                    break;
+                }
+            }
+            driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+            turnLeft(motorControl, 180); //180 deg left turn
+            driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+            turnRight(motorControl, 90); //90 deg right turn
+            indicateFlash('B');
+            ws::sendMessage(client, String("B2:AT_BLUE")); //Notify other bot at blue
+            followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
+            //wait until other bot is moving
+            while(true) {
+                receivedMessage = ws::poll(client);
+                if (receivedMessage == EXT + "B1:ACK_AT_BLUE") {
+                    indicateFlash('G');
+                    Serial.println("Received ACK_AT_BLUE from other bot, proceeding to yellow start");
+                    break;
+                }
+            }
+            turnRight(motorControl, 90); //90 deg right turn
+            driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+            turnRight(motorControl, 90); //90 deg right turn
+            while(true) {
+                receivedMessage = ws::poll(client);
+                if (receivedMessage == EXT + "B1:HOME") {
+                    indicateFlash('G');
+                    Serial.println("Received HOME from other bot, proceeding along yellow");
+                    break;
+                }
+            }
+            followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+            turnRight(motorControl, 90); //90    deg left turn
+            driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+            ws::sendMessage(client, String("B2:HOME")); //Notify other bot has returned
+            indicateFlash('G');
         }
+        
+        
+    //END PARTNER DEMO CODE---------------------------------------------------------
+        /*String ext = "1";
+        if (BOTID == 1) {
+            //Bot1
+            indicateFlash('B');
+            ws::sendMessage(client, String("team2:START"));
+            while(1) {
+                receivedMessage = ws::poll(client);
+                if (receivedMessage.length() > 0) {
+                    Serial.println("Message Received: " + receivedMessage);
+                    if (receivedMessage == ext + "team1:START") {
+                        Serial.println(" -- Commencing Movement");
+                        indicateFlash('G');
+                        delay(500);
+                        motorControl.setSpeed(100, 100);
+                        delay(5000);
+                        motorControl.setSpeed(0, 0);
+                        break;
+                    }
+                }*/
+                //Serial.print("Message Received: " + receivedMessage);
+                // if (receivedMessage.startsWith("F392FC86D8D7")) {
+                //     Serial.println(" -- Commencing Movement");
+                //     indicateFlash('G');
+                //     delay(500);
+                //     motorControl.setSpeed(100, 100);
+                //     delay(5000);
+                //     motorControl.setSpeed(0, 0);
+                //     return;
+                // }
+            //}
+        //}
     }
 }
 
