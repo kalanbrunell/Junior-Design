@@ -32,10 +32,14 @@ char currentColorChar = '\0';
 char followColorChar = 'N';
 
 int BOTID = 1; //Set Bot ID here
+int NAVMODE = 0; // 0: Solo Navigation, 1: Partner Navigation BOT1, 2: Partner Navigation BOT2
 
 
 // Local inter-class function declarations
-void ISR_button_pressed() {}
+void ISR_button_pressed() {
+    NAVMODE = (NAVMODE + 1) % 3;
+    Serial.println("Button Pressed! NAVMODE set to " + String(NAVMODE));
+}
 void indicateSolid(char colorChar);
 void indicateFlash(char colorChar);
 void followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense);
@@ -72,7 +76,7 @@ void setup() {
 
     ws::printWifiDiagnostics();
 
-    attachInterrupt(digitalPinToInterrupt(12), ISR_button_pressed, FALLING);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), ISR_button_pressed, FALLING);
     colorSensing.initializeColorSensing(LED_R, LED_G, LED_B, LED_IR, 
                                     PHOTOTRANSISTOR_Visible, PHOTOTRANSISTOR_IR);
     
@@ -82,115 +86,169 @@ void setup() {
 
 void loop() {
     indicateSolid('B');
-    /*
-    while(true) {
-        Serial.println("VBAT: " + String((float(analogRead(VBAT_PIN)) * VBAT_SCALE) * (5.0 / 1023.0)) + " V");
-        delay(500);
+    Serial.println("Starting Navigation Mode Selection...");
+
+    // Poll BUTTONPIN to determine which navigation mode to run
+    delay(5000); // Wait for choice
+    Serial.println("Selected Navigation Mode: " + String(NAVMODE));
+    indicateSolid('N');
+    delay(1000);
+    if (NAVMODE == 0) {
+        indicateFlash('B');
+        soloNavigation();
+    } else if (NAVMODE == 1) {
+        indicateFlash('Y');
+        partnerNavigationBOT1();
+    } else if (NAVMODE == 2) {
+        indicateFlash('G');
+        partnerNavigationBOT2();
     }
-        */
 
-// SOLO DEMO CODE-------------------------------------------------------------------------------------------------
+//Partner team Remote Bot Motion Milestone Code --------------------------------------------------------------
+        /*String ext = "1";
+        if (BOTID == 1) {
+            //Bot1
+            indicateFlash('B');
+            ws::sendMessage(client, String("team2:START"));
+            while(1) {
+                receivedMessage = ws::poll(client);
+                if (receivedMessage.length() > 0) {
+                    Serial.println("Message Received: " + receivedMessage);
+                    if (receivedMessage == ext + "team1:START") {
+                        Serial.println(" -- Commencing Movement");
+                        indicateFlash('G');
+                        delay(500);
+                        motorControl.setSpeed(100, 100);
+                        delay(5000);
+                        motorControl.setSpeed(0, 0);
+                        break;
+                    }
+                }*/
+                //Serial.print("Message Received: " + receivedMessage);
+                // if (receivedMessage.startsWith("F392FC86D8D7")) {
+                //     Serial.println(" -- Commencing Movement");
+                //     indicateFlash('G');
+                //     delay(500);
+                //     motorControl.setSpeed(100, 100);
+                //     delay(5000);
+                //     motorControl.setSpeed(0, 0);
+                //     return;
+                // }
+            //}
+        //}
+//---------------------------------------------------------------------------------------------------------------
+}
 
-    // while(true) {
-        
-    //     while(digitalRead(BUTTON_PIN) != LOW) {}
-    //     //Bot1
-    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-    //     turnRight(motorControl, 180); //180 deg right turn  
-    //     driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
-    //     turnLeft(motorControl, 90); //90 deg left turn
-    //     followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
-    //     turnLeft(motorControl, 90); //90 deg left turn
-    //     driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
-    //     turnLeft(motorControl, 90); //90 deg left turn
-    //     followLine_L('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
-    //     turnLeft(motorControl, 90); //90    deg left turn
-    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-        
-    //     while(digitalRead(BUTTON_PIN) != LOW) {}
-    //     //Bot2
-    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-    //     turnLeft(motorControl, 180); //180 deg left turn  
-    //     driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
-    //     turnRight(motorControl, 90); //90 deg right turn
-    //     driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
-    //     followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
-    //     turnRight(motorControl, 90); //90 deg right turn
-    //     driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
-    //     turnRight(motorControl, 90); //90 deg right turn
-    //     followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
-    //     turnRight(motorControl, 90); //90    deg left turn
-    //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-    // }
+/*
+ * name:      soloNavigation()
+ * purpose:   Demonstrates solo navigation sequence for BOT1 and BOT2 paths.
+ * arguments: none
+ * returns:   None
+ * effects:   The bot performs a series of movements including driving straight, turning,
+                following colored lines, and stopping at obstacles.
+ * other:
+ */
+void soloNavigation() {
+    while(digitalRead(BUTTON_PIN) != LOW) {}
+    //Bot1
+    driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    turnRight(motorControl, 180); //180 deg right turn  
+    driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
+    turnLeft(motorControl, 90); //90 deg left turn
+    followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
+    turnLeft(motorControl, 90); //90 deg left turn
+    driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+    turnLeft(motorControl, 90); //90 deg left turn
+    followLine_L('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+    turnLeft(motorControl, 90); //90    deg left turn
+    driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    
+    while(digitalRead(BUTTON_PIN) != LOW) {}
+    //Bot2
+    driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+    turnLeft(motorControl, 180); //180 deg left turn  
+    driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+    turnRight(motorControl, 90); //90 deg right turn
+    driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue
+    followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
+    turnRight(motorControl, 90); //90 deg right turn
+    driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+    turnRight(motorControl, 90); //90 deg right turn
+    followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+    turnRight(motorControl, 90); //90    deg left turn
+    driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+}
 
-//------------------------------------------------------------------------------------------------------------------
-
-//PARTNER DEMO CODE----------------------------------------------------------------------------------------------
-
-    // Serial.println("loop start");
+/*
+ * name:      partnerNavigationBOT1()
+ * purpose:   Demonstrates partner navigation sequence for BOT1.
+ * arguments: none
+ * returns:   none
+ * effects:   The bot performs a series of movements including driving straight, turning,
+                following colored lines, and coordinating with BOT2 via WebSocket messages.
+ * other: 
+ */
+void partnerNavigationBOT1() {
     ws::init(client, CLIENTID);
     while (client.connected()) {
         String EXT = "1";
         indicateSolid('G');
-        //Poll first to find a message from Mac and Cheese team
-        receivedMessage = ws::poll(client);
-        messageLength = receivedMessage.length();
-        if (messageLength > 0) { 
-            Serial.print("Message Received: " + receivedMessage); //Mac and Cheese Team Command Received
-            if(receivedMessage.charAt(0) == '0') {
-                Serial.println(" -- Internal Control Mode");
-            } else if(receivedMessage.charAt(0) == '1') {
-                Serial.println(" -- External Control Mode: Commencing");
-            } else {
-                Serial.println("");
+        while(digitalRead(BUTTON_PIN) != LOW) {}
+        ws::sendMessage(client, String("B1:START"));
+        indicateFlash('B');
+        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+        turnRight(motorControl, 180); //180 deg right turn  
+        driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
+        turnLeft(motorControl, 90); //90 deg left turn
+        ws::sendMessage(client, String("B1:AT_RED")); //Other bot should start 
+        indicateFlash('B');
+        followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
+        turnLeft(motorControl, 90); //90 deg left turn
+        driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
+        turnLeft(motorControl, 90); //90 deg left turn
+        //Wait for signal from other bot to proceed
+        //poll until message received
+        while(true) {
+            receivedMessage = ws::poll(client);
+            //messageLength = receivedMessage.length();
+            if (receivedMessage == EXT + "B2:AT_BLUE") {
+                indicateFlash('G');
+                Serial.println("Received AT_BLUE from other bot, proceeding along yellow");
+                ws::sendMessage(client, String("B1:ACK_AT_BLUE"));
+                break;
             }
         }
+        followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+        turnLeft(motorControl, 90); //90    deg left turn
+        driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
+        indicateFlash('G');
+        ws::sendMessage(client, String("B1:HOME"));
+        while(true) {
+            receivedMessage = ws::poll(client);
+            //messageLength = receivedMessage.length();
+            if (receivedMessage == EXT + "B2:HOME") {
+                indicateFlash('G');
+                Serial.println("Received AT_BLUE from other bot, proceeding along yellow");
+                ws::sendMessage(client, String("B1:ACK_HOME"));
+                break;
+            }
+        }
+    }
+}
 
-        while(digitalRead(BUTTON_PIN) != LOW) {
-            indicateSolid('W');
-        }; //Wait for button press to start demo
-        //BOT1
-        if (BOTID == 1) {
-            ws::sendMessage(client, String("B1:START"));
-            indicateFlash('B');
-            driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-            turnRight(motorControl, 180); //180 deg right turn  
-            driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
-            turnLeft(motorControl, 90); //90 deg left turn
-            ws::sendMessage(client, String("B1:AT_RED")); //Other bot should start 
-            indicateFlash('B');
-            followLine_L('R', 60, 15, colorSensing, motorControl, distanceSensing); //follow red
-            turnLeft(motorControl, 90); //90 deg left turn
-            driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
-            turnLeft(motorControl, 90); //90 deg left turn
-            //Wait for signal from other bot to proceed
-            //poll until message received
-            while(true) {
-                receivedMessage = ws::poll(client);
-                //messageLength = receivedMessage.length();
-                if (receivedMessage == EXT + "B2:AT_BLUE") {
-                    indicateFlash('G');
-                    Serial.println("Received AT_BLUE from other bot, proceeding along yellow");
-                    ws::sendMessage(client, String("B1:ACK_AT_BLUE"));
-                    break;
-                }
-            }
-            followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
-            turnRight(motorControl, 90); //90    deg left turn
-            driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
-            indicateFlash('G');
-            ws::sendMessage(client, String("B1:HOME"));
-            while(true) {
-                receivedMessage = ws::poll(client);
-                //messageLength = receivedMessage.length();
-                if (receivedMessage == EXT + "B2:HOME") {
-                    indicateFlash('G');
-                    Serial.println("Received AT_BLUE from other bot, proceeding along yellow");
-                    ws::sendMessage(client, String("B1:ACK_HOME"));
-                    break;
-                }
-            }
-        } else {
+/*
+ * name:      partnerNavigationBOT2()
+ * purpose:   Demonstrates partner navigation sequence for BOT2.
+ * arguments: none
+ * returns:   none
+ * effects:   The bot performs a series of movements including driving straight, turning,
+                following colored lines, and coordinating with BOT1 via WebSocket messages.
+ * other: 
+ */
+void partnerNavigationBOT2() {
+    ws::init(client, CLIENTID);
+    String EXT = "1";
+    while (client.connected()) {
             //BOT2
             //Wait for signal from other bot to start
             while(true) {
@@ -235,46 +293,7 @@ void loop() {
             ws::sendMessage(client, String("B2:HOME")); //Notify other bot has returned
             indicateFlash('G');
         }
-        
-        
-//END PARTNER DEMO CODE---------------------------------------------------------------------------------------
-
-//Partner team Remote Bot Motion Milestone Code --------------------------------------------------------------
-        /*String ext = "1";
-        if (BOTID == 1) {
-            //Bot1
-            indicateFlash('B');
-            ws::sendMessage(client, String("team2:START"));
-            while(1) {
-                receivedMessage = ws::poll(client);
-                if (receivedMessage.length() > 0) {
-                    Serial.println("Message Received: " + receivedMessage);
-                    if (receivedMessage == ext + "team1:START") {
-                        Serial.println(" -- Commencing Movement");
-                        indicateFlash('G');
-                        delay(500);
-                        motorControl.setSpeed(100, 100);
-                        delay(5000);
-                        motorControl.setSpeed(0, 0);
-                        break;
-                    }
-                }*/
-                //Serial.print("Message Received: " + receivedMessage);
-                // if (receivedMessage.startsWith("F392FC86D8D7")) {
-                //     Serial.println(" -- Commencing Movement");
-                //     indicateFlash('G');
-                //     delay(500);
-                //     motorControl.setSpeed(100, 100);
-                //     delay(5000);
-                //     motorControl.setSpeed(0, 0);
-                //     return;
-                // }
-            //}
-        //}
-//---------------------------------------------------------------------------------------------------------------
-    }
 }
-
 
 /*
  * name:      followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense)
@@ -479,6 +498,10 @@ void indicateSolid(char colorChar) {
         digitalWrite(INDC_R_PIN, HIGH);
         digitalWrite(INDC_G_PIN, HIGH);
         digitalWrite(INDC_B_PIN, HIGH);
+    } else if(colorChar == 'N') {
+        digitalWrite(INDC_R_PIN, LOW);
+        digitalWrite(INDC_G_PIN, LOW);
+        digitalWrite(INDC_B_PIN, LOW);
     } else {
         digitalWrite(INDC_R_PIN, LOW);
         digitalWrite(INDC_G_PIN, LOW);
