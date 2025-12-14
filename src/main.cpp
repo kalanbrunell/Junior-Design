@@ -57,7 +57,6 @@ void setup() {
                                     PHOTOTRANSISTOR_Visible, PHOTOTRANSISTOR_IR);
     distanceSensing.initializeDistanceSensing();
     pinMode(BUTTON_PIN, INPUT_PULLUP); //for button
-    pinMode(13, OUTPUT); //for attached LED
     pinMode(VBAT_PIN, INPUT); //for battery voltage reading
     
     while (status != WL_CONNECTED) {
@@ -142,20 +141,15 @@ void loop() {
             } else {
                 Serial.println("");
             }
-            // do something with this message... WIP
         }
-        //other team wants state 7
-        /*currentColorChar = colorSensing.currentColor();
-        if (currentColorChar == followColorChar) {
-            motorControl.setSpeed(100, 75);
-        } else {
-            motorControl.setSpeed(75, 100);
-        }*/
 
-        
+        while(digitalRead(BUTTON_PIN) != LOW) {
+            indicateSolid('W');
+        }; //Wait for button press to start demo
         //BOT1
         if (BOTID == 1) {
             ws::sendMessage(client, String("B1:START"));
+            indicateFlash('B');
             driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
             turnRight(motorControl, 180); //180 deg right turn  
             driveStraightUntilColor(colorSensing, motorControl, 'R'); //straight until red
@@ -478,6 +472,10 @@ void indicateSolid(char colorChar) {
         digitalWrite(INDC_R_PIN, HIGH);
         digitalWrite(INDC_G_PIN, HIGH);
         digitalWrite(INDC_B_PIN, LOW);
+    } else if(colorChar == 'W') {
+        digitalWrite(INDC_R_PIN, HIGH);
+        digitalWrite(INDC_G_PIN, HIGH);
+        digitalWrite(INDC_B_PIN, HIGH);
     } else {
         digitalWrite(INDC_R_PIN, LOW);
         digitalWrite(INDC_G_PIN, LOW);
