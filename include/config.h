@@ -3,6 +3,8 @@
 
 #include <Arduino.h> 
 
+//This file contains all configuration constants for the robot
+
 const int BUTTON_PIN = 8;
 const int VBAT_PIN = A0;
 const float VBAT_SCALE = 2; 
@@ -29,8 +31,12 @@ const int PHOTOTRANSISTOR_IR = A4;
 const int COLOR_THRESHOLD = 50;
 const int DISTANCECALFACTOR = 1;
 
+//Class Websocket
 //static const char* SERVERADDRESS = "35.239.140.61";
+
+//Partner Team Server
 static const char* SERVERADDRESS = "10.5.15.112";
+
 const int PORT = 8080;
 static const char* CLIENTID = "DCF2BCAB6F0B";
 static const char* MACCHEESEFILTER = "WebClient_DCF2BCAB6F0B";

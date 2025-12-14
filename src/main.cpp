@@ -11,7 +11,7 @@
 #include <WiFi.h>
 
 
-
+// WiFi and WebSocket client setup
 WiFiClient wifi;
 WebSocketClient client = WebSocketClient(wifi, SERVERADDRESS, PORT);
 
@@ -20,6 +20,7 @@ MotorControl motorControl;
 ColorSensing colorSensing;
 DistanceSensing distanceSensing;
 
+//Variables
 int status = WL_IDLE_STATUS;
 int count = 0;
 
@@ -33,7 +34,7 @@ char followColorChar = 'N';
 int BOTID = 1; //Set Bot ID here
 
 
-// Minimal ISR stub for button interrupt
+// Local inter-class function declarations
 void ISR_button_pressed() {}
 void indicateSolid(char colorChar);
 void indicateFlash(char colorChar);
@@ -86,7 +87,7 @@ void loop() {
     }
         */
 
-    // SOLO DEMO CODE---------------------------------------------------------
+// SOLO DEMO CODE-------------------------------------------------------------------------------------------------
 
     // while(true) {
         
@@ -120,9 +121,9 @@ void loop() {
     //     driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
     // }
 
-    //----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------
 
-    //PARTNER DEMO CODE---------------------------------------------------------
+//PARTNER DEMO CODE----------------------------------------------------------------------------------------------
 
     // Serial.println("loop start");
     ws::init(client, CLIENTID);
@@ -239,7 +240,9 @@ void loop() {
         }
         
         
-    //END PARTNER DEMO CODE---------------------------------------------------------
+//END PARTNER DEMO CODE---------------------------------------------------------------------------------------
+
+//Partner team Remote Bot Motion Milestone Code --------------------------------------------------------------
         /*String ext = "1";
         if (BOTID == 1) {
             //Bot1
@@ -271,9 +274,25 @@ void loop() {
                 // }
             //}
         //}
+//---------------------------------------------------------------------------------------------------------------
     }
 }
 
+
+/*
+ * name:      followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense)
+ * purpose:   Follow the left edge of a specific color.
+ * arguments: colorChar - character representing the target color to follow
+ *            baseSpeed - the base speed for both motors
+ *            tuningConst - the constant used to adjust motor speeds for line following
+ *            colorsense - instance of ColorSensing class for color detection
+ *            motors - instance of MotorControl class for motor control
+ *            distancesense - instance of DistanceSensing class for distance measurement
+ * returns:   None
+ * effects:   Continuously adjusts motor speeds to follow the left edge of the specified color 
+                until an obstacle is detected
+ * other:
+ */
 void followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense) {
     int motor1Speed = baseSpeed;
     int motor2Speed = baseSpeed;
@@ -306,6 +325,20 @@ void followLine_L(char colorChar, int baseSpeed, int tuningConst, ColorSensing c
 
 }
 
+/*
+ * name:      followLine_R(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense)
+ * purpose:   Follow the left edge of a specific color.
+ * arguments: colorChar - character representing the target color to follow
+ *            baseSpeed - the base speed for both motors
+ *            tuningConst - the constant used to adjust motor speeds for line following
+ *            colorsense - instance of ColorSensing class for color detection
+ *            motors - instance of MotorControl class for motor control
+ *            distancesense - instance of DistanceSensing class for distance measurement
+ * returns:   None
+ * effects:   Continuously adjusts motor speeds to follow the right edge of the specified color 
+                until an obstacle is detected
+ * other:
+ */
 void followLine_R(char colorChar, int baseSpeed, int tuningConst, ColorSensing colorsense, MotorControl motors, DistanceSensing distancesense) {
     int motor1Speed = baseSpeed;
     int motor2Speed = baseSpeed;
@@ -338,16 +371,46 @@ void followLine_R(char colorChar, int baseSpeed, int tuningConst, ColorSensing c
 
 }
 
+/*
+ * name:      turnRight(MotorControl motors, int degree)
+ * purpose:   Turn the robot right by a specified degree.
+ * arguments: motors - instance of MotorControl class for motor control
+ *            degree - the degree to turn right
+ * returns:   None
+ * effects:   Turns the robot right by adjusting motor speeds and delaying for a calculated time
+ * other:
+ */
 void turnRight(MotorControl motors, int degree) {
     motors.setSpeed(60, -60);
     delay(degree * 9); //adjust delay for turn
     motors.setSpeed(0, 0);
 }
+
+/*
+ * name:      turnLeft(MotorControl motors, int degree)
+ * purpose:   Turn the robot left by a specified degree.
+ * arguments: motors - instance of MotorControl class for motor control
+ *            degree - the degree to turn left
+ * returns:   None
+ * effects:   Turns the robot left by adjusting motor speeds and delaying for a calculated time
+ * other:
+ */
 void turnLeft(MotorControl motors, int degree) {
     motors.setSpeed(-60, 60);
     delay(degree * 9); //adjust delay for turn
     motors.setSpeed(0, 0);
 }
+
+/*
+ * name:      driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char colorChar)
+ * purpose:   Drive straight until a specific color is detected.
+ * arguments: colorsense - instance of ColorSensing class for color detection
+ *            motors - instance of MotorControl class for motor control
+ *            colorChar - character representing the target color to detect
+ * returns:   None
+ * effects:   Drives the robot straight until the specified color is detected consistently
+ * other:
+ */
 void driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char colorChar) {
     motors.setSpeed(80, 80);
     int targetCounter = 0;
@@ -365,6 +428,16 @@ void driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char 
         }
     }
 }
+
+/*
+ * name:      driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense)
+ * purpose:   Drive straight until an obstacle is detected.
+ * arguments: motors - instance of MotorControl class for motor control
+ *            distancesense - instance of DistanceSensing class for distance measurement
+ * returns:   None
+ * effects:   Drives the robot straight until an obstacle is detected consistently
+ * other:
+ */
 void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense) {
     motors.setSpeed(80, 80);
     while(true) {
@@ -380,6 +453,14 @@ void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense) {
     }
 }
 
+/*
+ * name:      indicateSolid(char colorChar)
+ * purpose:   Indicate a solid color on the RGB LED.
+ * arguments: colorChar - character representing the color to display ('R', 'G', 'B', 'Y', 'N')
+ * returns:   None
+ * effects:   Sets the RGB LED to display the specified solid color
+ * other:
+ */
 void indicateSolid(char colorChar) {
     if(colorChar == 'R') {
         digitalWrite(INDC_R_PIN, HIGH);
@@ -403,6 +484,15 @@ void indicateSolid(char colorChar) {
         digitalWrite(INDC_B_PIN, LOW);
     }
 }
+
+/*
+ * name:      indicateFlash(char colorChar)
+ * purpose:   Indicate a flashing color on the RGB LED.
+ * arguments: colorChar - character representing the color to display ('R', 'G', 'B', 'Y', 'N')
+ * returns:   None
+ * effects:   Flashes the RGB LED with the specified color twice
+ * other:
+ */
 void indicateFlash(char colorChar){
     for(int i = 0; i < 2; i++) {
         indicateSolid(colorChar);

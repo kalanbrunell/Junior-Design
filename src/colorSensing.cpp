@@ -1,7 +1,20 @@
 #include "colorSensing.h"
 #include <Arduino.h>
 
-
+/*
+ * name:      ColorSensing::initializeColorSensing(int ledR, int ledG, int ledB, int ledIR,
+                                    int photoVisible, int photoIR)
+ * purpose:   Initialize color sensing pins
+ * arguments: ledR - pin for red LED
+              ledG - pin for green LED
+              ledB - pin for blue LED
+              ledIR - pin for IR LED
+              photoVisible - pin for visible light phototransistor
+              photoIR - pin for IR phototransistor
+ * returns:   None
+ * effects:   Sets up the color sensing pins for use
+ * other:
+ */
 void ColorSensing::initializeColorSensing(int ledR, int ledG, int ledB, int ledIR,
                                     int photoVisible, int photoIR) {
   pinMode(ledR, OUTPUT);
@@ -13,6 +26,16 @@ void ColorSensing::initializeColorSensing(int ledR, int ledG, int ledB, int ledI
   pinMode(photoIR, INPUT);
 }
 
+
+/*
+ * name:      ColorSensing::readColorValue(int ledPin, int photoPin)
+ * purpose:   Read the color value using specified LED and phototransistor pins
+ * arguments: ledPin - pin for the LED to illuminate
+              photoPin - pin for the phototransistor to read
+ * returns:   Measured color value
+ * effects:   Reads the color value by illuminating the LED and measuring the phototransistor response
+ * other:
+ */
 int ColorSensing::readColorValue(int ledPin, int photoPin){
   digitalWrite(ledPin, HIGH);
   delay(5); // Allow sensor to stabilize
@@ -22,6 +45,15 @@ int ColorSensing::readColorValue(int ledPin, int photoPin){
   return value;
 }
 
+
+/*
+ * name:      ColorSensing::currentColor()
+ * purpose:   Determine the current color detected by the sensor
+ * arguments: None
+ * returns:   Character representing the detected color ('R', 'B', 'Y', 'N')
+ * effects:   Reads color values and determines the current color based on thresholds
+ * other:
+ */
 char ColorSensing::currentColor() {
 
   int redValue = readColorValue(LED_R, PHOTOTRANSISTOR_Visible);
