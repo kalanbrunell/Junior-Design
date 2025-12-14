@@ -57,7 +57,7 @@ void setup() {
     pinMode(INDC_G_PIN, OUTPUT);
     pinMode(INDC_R_PIN, OUTPUT);
     indicateFlash('B');
-    indicateSolid('R');
+    indicateSolid('Y');
     Serial.begin(9600);
     motorControl.initializeMotion(pin0, pin1, pin2, pin3, TRIM1, TRIM2);
     colorSensing.initializeColorSensing(LED_R, LED_G, LED_B, LED_IR, 
@@ -79,7 +79,15 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), ISR_button_pressed, FALLING);
     colorSensing.initializeColorSensing(LED_R, LED_G, LED_B, LED_IR, 
                                     PHOTOTRANSISTOR_Visible, PHOTOTRANSISTOR_IR);
-    
+
+    Serial.println("Battery Voltage: " + String(analogRead(VBAT_PIN)));
+    if (analogRead(VBAT_PIN) < 600) {
+        Serial.println("Warning: Battery voltage is low!");
+        indicateFlash('R');
+    } else {
+        Serial.println("Battery voltage is sufficient.");
+        indicateFlash('G');
+    }
 }
 
 
@@ -223,7 +231,13 @@ void partnerNavigationBOT1() {
         driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
         indicateFlash('G');
         ws::sendMessage(client, String("B1:HOME"));
+        int delayAfterHome = 0;
         while(true) {
+            delayAfterHome ++;
+            if (delayAfterHome > 30000) {
+                delayAfterHome = 0;
+                ws::sendMessage(client, String("B1:HOME"));
+            }
             receivedMessage = ws::poll(client);
             //messageLength = receivedMessage.length();
             if (receivedMessage == EXT + "B2:HOME") {
