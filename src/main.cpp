@@ -44,6 +44,9 @@ void turnRight(MotorControl motors, int degree);
 void turnLeft(MotorControl motors, int degree);
 void driveStraightUntilColor(ColorSensing colorsense, MotorControl motors, char colorChar);
 void driveStraighUntilStop(MotorControl motors, DistanceSensing distancesense);
+void soloNavigation();
+void partnerNavigationBOT1();
+void partnerNavigationBOT2();
 
 void setup() {
     pinMode(INDC_B_PIN, OUTPUT);
