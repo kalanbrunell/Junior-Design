@@ -29,11 +29,12 @@ const int PHOTOTRANSISTOR_IR = A4;
 const int COLOR_THRESHOLD = 50;
 const int DISTANCECALFACTOR = 1;
 
-static const char* SERVERADDRESS = "35.239.140.61";
+//static const char* SERVERADDRESS = "35.239.140.61";
+static const char* SERVERADDRESS = "10.5.15.112";
 const int PORT = 8080;
 static const char* CLIENTID = "DCF2BCAB6F0B";
 static const char* MACCHEESEFILTER = "WebClient_DCF2BCAB6F0B";
-static const char* EXTERNALFILTER = "WebClient_DCF2BCAB6F0B.EXT";
+static const char* EXTERNALFILTER = "F392FC86D8D7";
 
 static const char* SSID = "tufts_eecs";
 static const char* PASS = "foundedin1883";
