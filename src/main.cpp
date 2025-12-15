@@ -93,6 +93,12 @@ void setup() {
 
 
 void loop() {
+    // // Test
+    // // Serial.println(colorSensing.currentColor());
+    // followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing);
+
+
+    // // Navigation Mode Selection Code --------------------------------------------------------------
     indicateSolid('B');
     Serial.println("Starting Navigation Mode Selection...");
 
@@ -226,7 +232,7 @@ void partnerNavigationBOT1() {
                 break;
             }
         }
-        followLine_R('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
+        followLine_L('Y', 60, 15, colorSensing, motorControl, distanceSensing); //follow yellow
         turnLeft(motorControl, 90); //90    deg left turn
         driveStraighUntilStop(motorControl, distanceSensing); //straight until stop
         indicateFlash('G');
@@ -280,16 +286,24 @@ void partnerNavigationBOT2() {
             turnRight(motorControl, 90); //90 deg right turn
             indicateFlash('B');
             ws::sendMessage(client, String("B2:AT_BLUE")); //Notify other bot at blue
-            followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
+            driveStraightUntilColor(colorSensing, motorControl, 'B'); //straight until blue again
             //wait until other bot is moving
+            int delayAfterBlue = 0;
             while(true) {
+                delayAfterBlue++;
+                if (delayAfterBlue > 30000) {
+                    delayAfterBlue = 0;
+                    ws::sendMessage(client, String("B2:AT_BLUE")); //Notify other bot at blue
+                }
                 receivedMessage = ws::poll(client);
                 if (receivedMessage == EXT + "B1:ACK_AT_BLUE") {
                     indicateFlash('G');
                     Serial.println("Received ACK_AT_BLUE from other bot, proceeding to yellow start");
+                    delay(10000); //Wait 5 seconds to allow other bot to clear intersection
                     break;
                 }
             }
+            followLine_R('B', 60, 15, colorSensing, motorControl, distanceSensing); //follow blue
             turnRight(motorControl, 90); //90 deg right turn
             driveStraightUntilColor(colorSensing, motorControl, 'Y'); //straight until yellow
             turnRight(motorControl, 90); //90 deg right turn
